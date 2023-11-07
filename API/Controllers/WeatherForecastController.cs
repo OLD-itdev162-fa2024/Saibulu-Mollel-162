@@ -1,4 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
+using Domain;
+using Microsoft.AspNetCore.Mvc; 
+using Persistence;
 
 namespace API.Controllers;
 
@@ -13,12 +15,15 @@ public class WeatherForecastController : ControllerBase
 
     private readonly ILogger<WeatherForecastController> _logger;
 
-    public WeatherForecastController(ILogger<WeatherForecastController> logger)
-    {
-        _logger = logger;
-    }
+    private readonly DataContext _context; 
 
-    [HttpGet(Name = "GetWeatherForecast")]
+    public WeatherForecastController(ILogger<WeatherForecastController> logger, DataContext context) 
+    { 
+        _logger = logger; 
+        _context = context;
+    } 
+
+[HttpGet(Name = "GetWeatherForecast")]
     public IEnumerable<WeatherForecast> Get()
     {
         return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -28,5 +33,31 @@ public class WeatherForecastController : ControllerBase
             Summary = Summaries[Random.Shared.Next(Summaries.Length)]
         })
         .ToArray();
+    }
+
+    [HttpPost] 
+
+    public ActionResult<WeatherForecast> Create() 
+    { 
+
+        Console.WriteLine($"Database path: {_context.DbPath}"); 
+        Console.WriteLine("Insert a new WeatherForecast"); 
+
+        var forecast = new WeatherForecast() 
+        { 
+            Date = new DateOnly(),
+            TemperatureC = 75, 
+            Summary = "Warm"
+        }; 
+
+        _context.WeatherForecasts.Add(forecast); 
+        var success = _context.SaveChanges() > 0; 
+
+        if (success) 
+        { 
+            return forecast;
+        } 
+
+        throw new Exception("Error creating WeatherForecast");
     }
 }
